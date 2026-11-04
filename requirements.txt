@@ -1,0 +1,10 @@
+torch
+torchvision
+opencv-python-headless
+mediapipe
+numpy
+pandas
+matplotlib
+fastapi
+uvicorn
+streamlit
