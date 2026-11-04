@@ -1,0 +1,56 @@
+{
+  "target": "aveOralM",
+  "cv": "5-fold, shuffle, seed 42",
+  "canthiMax": {
+    "n": 1020,
+    "n_febrile": 111,
+    "bias": -0.0009573288294319443,
+    "MAE": 0.2478726935767504,
+    "RMSE": 0.31890044168797316,
+    "MAE_CI95": [
+      0.23558314340736874,
+      0.2597027331479098
+    ],
+    "MAE_afebrile": 0.22917273322105383,
+    "MAE_febrile": 0.40101020675988724,
+    "bias_febrile": -0.3644692213020015,
+    "MAE_ambient_lt24": 0.24645641152822165,
+    "MAE_ambient_ge24": 0.2489908109834836,
+    "screening_thr_37.5": {
+      "n_pos": 111,
+      "sensitivity": 0.7117117117117117,
+      "specificity": 0.9801980198019802
+    },
+    "screening_thr_37.2_exploratory": {
+      "n_pos": 111,
+      "sensitivity": 0.9459459459459459,
+      "specificity": 0.8228822882288229
+    }
+  },
+  "T_Max": {
+    "n": 1020,
+    "n_febrile": 111,
+    "bias": -0.0003868612339081458,
+    "MAE": 0.209999455991555,
+    "RMSE": 0.2705030003647175,
+    "MAE_CI95": [
+      0.19952853546490099,
+      0.2201745226101673
+    ],
+    "MAE_afebrile": 0.19740534181696287,
+    "MAE_febrile": 0.31313503963753936,
+    "bias_febrile": -0.272189916216267,
+    "MAE_ambient_lt24": 0.19722999411425066,
+    "MAE_ambient_ge24": 0.22008061010521632,
+    "screening_thr_37.5": {
+      "n_pos": 111,
+      "sensitivity": 0.7567567567567568,
+      "specificity": 0.9823982398239824
+    },
+    "screening_thr_37.2_exploratory": {
+      "n_pos": 111,
+      "sensitivity": 0.954954954954955,
+      "specificity": 0.8371837183718371
+    }
+  }
+}
