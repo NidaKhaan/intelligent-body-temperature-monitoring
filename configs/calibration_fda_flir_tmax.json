@@ -3,7 +3,20 @@
   "source": "FDA/PhysioNet FLIR groups1and2: single-round T_Max vs aveOralM, 4 rounds pooled",
   "slope": 0.5872020676829531,
   "intercept": 15.83915621693001,
-  "residual_std_c": 0.3661322418997844,
   "n": 4013,
-  "validated_for": "FDA camera and FDA ROI definition only; not transferable"
+  "validated_for": "FDA camera and FDA ROI definition only; not transferable",
+  "residual_std_c_pooled_in_sample": 0.3661322418997844,
+  "per_round_residual_mean_c": {
+    "1": 0.154,
+    "2": 0.067,
+    "3": 0.06,
+    "4": -0.286
+  },
+  "per_round_residual_std_c": {
+    "1": 0.321,
+    "2": 0.32,
+    "3": 0.323,
+    "4": 0.338
+  },
+  "note": "Round 4 differs by ~0.4 C from rounds 1-3; pooled std is inflated by this between-round offset. Cause not investigated."
 }
