@@ -1,6 +1,8 @@
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))   # repo root, for `streamlit run frontend/app.py`
 
+import os
+os.environ.setdefault("OPENCV_IO_MAX_IMAGE_PIXELS", str(2 ** 25))
 import datetime as dt
 import cv2, numpy as np, pandas as pd, streamlit as st
 from frontend.helpers import MODE_16, MODE_8, MODE_SYN, synthetic_frame, render_overlay, reading_row
