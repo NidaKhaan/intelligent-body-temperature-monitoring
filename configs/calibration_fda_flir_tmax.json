@@ -1,0 +1,9 @@
+{
+  "name": "fda_flir_tmax_single_frame",
+  "source": "FDA/PhysioNet FLIR groups1and2: single-round T_Max vs aveOralM, 4 rounds pooled",
+  "slope": 0.5872020676829531,
+  "intercept": 15.83915621693001,
+  "residual_std_c": 0.3661322418997844,
+  "n": 4013,
+  "validated_for": "FDA camera and FDA ROI definition only; not transferable"
+}

@@ -24,8 +24,8 @@ class StageTracker:
                              "time": time.strftime("%Y-%m-%d %H:%M:%S"), **meta}
         atomic_write_json(self.path, self.state)
 
-    def run(self, stage, fn, *args, **kwargs):
-        if self.is_done(stage):
+    def run(self, stage, fn, *args, verify=None, **kwargs):
+        if self.is_done(stage) and (verify is None or verify()):
             print(f"[skip] {stage} (already done)")
             return
         print(f"[run]  {stage}")
