@@ -14,6 +14,11 @@
 ### Screening logic (synthetic frames, not real people)
 ![Screening logic](docs/images/screening_logic.png)
 
+### Dashboard (synthetic mode)
+![Dashboard](docs/images/dashboard_synthetic.png)
+
+*Streamlit dashboard in synthetic mode: measured face max, status, a clearly labelled simulated temperature offset, session history and CSV export. Uploads of 16-bit radiometric images are supported. Nothing is stored.*
+
 ### Results overview (aggregate numbers from public datasets)
 ![Results overview](docs/images/results_overview.png)
 

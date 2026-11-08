@@ -90,6 +90,9 @@ if readings:
     left.image(render_overlay(temp_c, readings), caption="Colormap: 20 to 38 °C (white box = reading, orange = unreliable, red = alert)")
     now = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     rows = [reading_row(source, r, now) for r in readings]
+    r0 = readings[0]; c1, c2 = right.columns(2)
+    c1.metric('Face max (measured)', 'n/a' if r0.face_max_c is None else f'{r0.face_max_c:.1f} °C')
+    c2.metric('Status', r0.status.replace('_', ' '))
     right.dataframe(pd.DataFrame(rows), use_container_width=True)
     if any(r.alert for r in readings):
         right.error("Alert: measured face max is at or above the threshold.")
