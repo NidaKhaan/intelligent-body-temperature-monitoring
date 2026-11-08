@@ -4,8 +4,18 @@
 > original brief was reached only under the conditions listed below; end-to-end accuracy with automatic
 > face detection could not be validated on any public dataset.
 
-**Live demo:** https://huggingface.co/spaces/NidaaKhaan/thermal-face-screening
-(synthetic frame, 8-bit detection-only and 16-bit radiometric upload modes; images are processed in memory and not stored)
+## At a glance
+
+### Face detection and RGB-thermal registration (real data)
+![Registration demo](docs/images/alignment_demo.png)
+
+*SpeakingFaces (ISSAI, CC BY 4.0), one subject. A homography is estimated from one frame of a camera position and applied to another frame of the same position. The dataset's thermal images are 8-bit, so they carry no temperature. The IoU compares the mapped box with a box MediaPipe finds on the thermal image: a proxy, not ground truth.*
+
+### Screening logic (synthetic frames, not real people)
+![Screening logic](docs/images/screening_logic.png)
+
+### Results overview (aggregate numbers from public datasets)
+![Results overview](docs/images/results_overview.png)
 
 ## What it does
 
@@ -21,7 +31,7 @@ the evaluation scripts and result files are in `docs/results/`.
 |---|---|
 | Person detection | Evaluated on LLVIP (below); optional module, not wired into the dashboard |
 | Face detection | MediaPipe on the thermal frame, in the pipeline |
-| RGB-thermal alignment | **Not implemented in the pipeline.** Registration was only analysed on one SpeakingFaces subject |
+| RGB-thermal alignment | Homography registration module (`src/alignment/registration.py`, tested), demonstrated on one SpeakingFaces subject; not wired into the thermal-only pipeline |
 | Face-person association | Not implemented |
 | Temperature from thermal data | Implemented (16-bit counts to °C, assumed 0.01 K/count) |
 | Error <= 0.3 °C | MAE met, RMSE borderline, only with expert ROI at 0.8 m on one camera model |
