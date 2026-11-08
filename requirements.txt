@@ -5,6 +5,10 @@ mediapipe
 numpy
 pandas
 matplotlib
+scikit-learn
 fastapi
 uvicorn
+python-multipart
+httpx
 streamlit
+pytest
