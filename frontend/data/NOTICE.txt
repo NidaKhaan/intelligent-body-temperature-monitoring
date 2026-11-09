@@ -1,0 +1,1 @@
+Source: FDA / PhysioNet face and oral temperature data (CC0). De-identified: no subject IDs or demographics.

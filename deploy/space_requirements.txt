@@ -2,3 +2,5 @@ numpy==2.4.6
 pandas==2.2.3
 opencv-python-headless==5.0.0.93
 mediapipe==1.2.2
+scikit-learn==1.6.1
+matplotlib==3.10.0
