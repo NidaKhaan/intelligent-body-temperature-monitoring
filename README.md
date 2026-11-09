@@ -80,6 +80,8 @@ For the 5 subjects recorded at both 1 m and 6.6 m the face maximum falls by 1.15
 
 ### 3. ROI placement (Charlotte-ThermalFace, 600 images, 4 subjects)
 
+> **Detector note.** The table below (and the IoU in the registration figure) was measured with MediaPipe's legacy `solutions` full-range face detector. MediaPipe 1.x no longer ships it, so the code now uses the Tasks API with the short-range BlazeFace model, which is meant for nearer faces.
+
 | Distance | ROI shifted by 10% of face height | Automatic box vs landmark ROI | IoU with landmark box |
 |---|---|---|---|
 | 1.0 m | 0.05 °C | 0.15 °C | 0.70 |
@@ -90,7 +92,7 @@ Shifting the ROI barely changes the face maximum (above 0.1 °C in 9% of images 
 
 ### 4. Face keypoints, alignment and RGB-thermal registration (SpeakingFaces)
 
-*(figure face_alignment.png is missing)*
+![Face keypoints and alignment](docs/images/face_alignment.png)
 
 *MediaPipe finds the face box and six keypoints (eyes, nose, mouth, ears). The eye keypoints drive a similarity transform that gives a canonical 256x256 crop, and the same transform is applied to the thermal frame. In this dataset the aligned RGB and thermal frames share one geometry. The thermal frames are 8-bit colourised PNGs, so they carry no temperature.*
 

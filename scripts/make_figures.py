@@ -187,7 +187,12 @@ def charlotte_hotspots():
 
 def face_alignment():
     import mediapipe as mp
+    from mediapipe.tasks import python as mpt
+    from mediapipe.tasks.python import vision
     from src.alignment.face_aligner import FaceAligner
+    from src.detection.face_detector import ensure_model
+    det = vision.FaceDetector.create_from_options(vision.FaceDetectorOptions(
+        base_options=mpt.BaseOptions(model_asset_path=str(ensure_model())), min_detection_confidence=0.3))
     SUB = DRIVE / "datasets/speaking_faces/processed/sample_trial1_every81"
     def idx(f): return {p.stem.rsplit("_", 1)[0]: p for p in (SUB / f).glob("*.png")}
     thr, ali = idx("thr_image"), idx("rgb_image_aligned")
@@ -195,24 +200,28 @@ def face_alignment():
     for s in common:
         by_pos.setdefault(s.split("_")[3], s)
     picks = [by_pos[k] for k in sorted(by_pos)][:: max(len(by_pos) // 3, 1)][:3]
-    fd = mp.solutions.face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.3)
     aligner = FaceAligner(target_size=(256, 256), eye_target_ratio=0.35); rows = []
     for s in picks:
-        rgb = cv2.cvtColor(cv2.imread(str(ali[s])), cv2.COLOR_BGR2RGB); th = cv2.cvtColor(cv2.imread(str(thr[s])), cv2.COLOR_BGR2RGB)
-        h, w = rgb.shape[:2]; res = fd.process(rgb)
+        rgb = cv2.cvtColor(cv2.imread(str(ali[s])), cv2.COLOR_BGR2RGB)
+        th = cv2.cvtColor(cv2.imread(str(thr[s])), cv2.COLOR_BGR2RGB)
+        h, w = rgb.shape[:2]
+        res = det.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(rgb)))
         if not res.detections:
             continue
-        d = max(res.detections, key=lambda q: q.score[0])
-        kp = [(k.x * w, k.y * h) for k in d.location_data.relative_keypoints]
+        d = max(res.detections, key=lambda q: q.categories[0].score)
+        if not d.keypoints:
+            continue
+        kp = [(k.x * w, k.y * h) for k in d.keypoints]
         left, right = sorted(kp[:2], key=lambda p: p[0])
         a_rgb, M = aligner.align_face_by_eyes(rgb, left, right)
-        rows.append((rgb, kp, d.location_data.relative_bounding_box, a_rgb, cv2.warpAffine(th, M, (256, 256), flags=cv2.INTER_LINEAR)))
+        bb = d.bounding_box
+        rows.append((rgb, kp, (bb.origin_x, bb.origin_y, bb.width, bb.height), a_rgb,
+                     cv2.warpAffine(th, M, (256, 256), flags=cv2.INTER_LINEAR)))
     assert rows, "no face detected in the picked frames"
     fig, ax = plt.subplots(len(rows), 3, figsize=(10.5, 3.5 * len(rows)), squeeze=False)
     for i, (rgb, kp, bb, a_rgb, a_th) in enumerate(rows):
-        h, w = rgb.shape[:2]
         ax[i, 0].imshow(rgb); ax[i, 1].imshow(a_rgb); ax[i, 2].imshow(a_th)
-        ax[i, 0].add_patch(plt.Rectangle((bb.xmin * w, bb.ymin * h), bb.width * w, bb.height * h, fill=False, ec="lime", lw=2))
+        ax[i, 0].add_patch(plt.Rectangle((bb[0], bb[1]), bb[2], bb[3], fill=False, ec="lime", lw=2))
         ax[i, 0].scatter([p[0] for p in kp], [p[1] for p in kp], s=28, c="red", edgecolors="white", linewidths=.6)
         for a in ax[i]:
             a.axis("off")
