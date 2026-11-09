@@ -230,6 +230,7 @@ def face_alignment():
     ax[0, 2].set_title("Same transform applied to thermal", fontsize=10)
     fig.suptitle("SpeakingFaces (ISSAI), CC BY 4.0: aligned RGB and 8-bit thermal frames from three camera positions", fontsize=8)
     plt.tight_layout(); plt.savefig(IMG / "face_alignment.png", dpi=130); plt.close()
+    det.close()
 
 
 if __name__ == "__main__":

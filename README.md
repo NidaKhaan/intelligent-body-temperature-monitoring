@@ -80,7 +80,7 @@ For the 5 subjects recorded at both 1 m and 6.6 m the face maximum falls by 1.15
 
 ### 3. ROI placement (Charlotte-ThermalFace, 600 images, 4 subjects)
 
-> **Detector note.** The table below (and the IoU in the registration figure) was measured with MediaPipe's legacy `solutions` full-range face detector. MediaPipe 1.x no longer ships it, so the code now uses the Tasks API with the short-range BlazeFace model, which is meant for nearer faces.
+> **Detector note.** The table below (and the IoU in the registration figure) was measured with MediaPipe's legacy `solutions` full-range face detector. MediaPipe 1.x no longer ships it, so the code now uses the Tasks API with the short-range BlazeFace model, which is meant for nearer faces. The same 600 images measured with the current detector are in `docs/results/charlotte_roi_detector_v2.csv`.
 
 | Distance | ROI shifted by 10% of face height | Automatic box vs landmark ROI | IoU with landmark box |
 |---|---|---|---|
