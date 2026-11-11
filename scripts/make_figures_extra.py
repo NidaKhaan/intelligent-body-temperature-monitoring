@@ -140,7 +140,7 @@ def llvip_detections():
 if __name__ == "__main__":
     failed = []
     for name, fn in [("fda_examples", fda_examples), ("fda_study_figure", fda_study_figure),
-                     ("charlotte_landmarks", charlotte_landmarks), ("llvip_detections", llvip_detections)]:
+                     ("llvip_detections", llvip_detections)]:
         try:
             fn()
             print("ok  ", name)

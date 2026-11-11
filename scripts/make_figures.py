@@ -115,7 +115,7 @@ def fda_regions():
     res = pd.DataFrame(rows).sort_values("mean_MAE").reset_index(drop=True)
     res.round(4).to_csv(RES / "fda_region_summary.csv", index=False)
     top = res.head(14)
-    fig, ax = plt.subplots(1, 3, figsize=(18, 5.8), gridspec_kw={"width_ratios": [1.25, 1, 0.8]})
+    fig, ax = plt.subplots(1, 3, figsize=(13, 5.2), gridspec_kw={"width_ratios": [1.25, 1, 0.8]})
     colors = ["#ef4444" if f in ("T_Max", "canthiMax") else "#60a5fa" for f in top.feature]
     ax[0].barh(range(len(top)), top.mean_MAE, color=colors); ax[0].set_yticks(range(len(top)))
     ax[0].set_yticklabels(top.feature, fontsize=9); ax[0].invert_yaxis()

@@ -8,6 +8,15 @@ A research prototype that turns a radiometric thermal frame into a face-temperat
 
 **Contents:** [Key findings](#key-findings) · [Scope](#scope-against-the-original-brief) · [System design](#system-design) · [Results](#results) · [Dashboard and API](#dashboard-and-api) · [Limitations](#limitations) · [Datasets](#datasets-and-licences) · [Repository structure](#repository-structure) · [Quick start](#quick-start) · [Reproducibility](#reproducibility) · [Citations](#citations)
 
+## In one minute
+
+A thermal camera records a temperature for every pixel. This project takes such a frame, finds the face, reads the hottest temperature inside the face region and asks the question that matters for fever screening: **how far can that reading be trusted?**
+
+1. **Reading:** the face-region maximum from a 16-bit thermal frame (skin surface temperature).
+2. **Check:** it is compared with an oral thermometer for 1,020 real volunteers (FDA data).
+3. **Result:** the raw reading is about 1 °C too low. A linear calibration brings the average error to about 0.2 to 0.3 °C under good conditions, but fevers are under-estimated, distance lowers the reading by more than 1 °C, and a calibration does not transfer to another camera.
+4. **Safety:** when in doubt (no face, face too small, no calibration) the software reports a status instead of raising an alert.
+
 ## Key findings
 
 1. **Raw facial temperature is not body temperature.** On the FDA data the whole-face maximum reads about 0.9 °C below the oral thermometer and the inner canthus about 1.2 °C below. A linear calibration brings the mean absolute error to 0.21 to 0.25 °C.
@@ -51,19 +60,19 @@ One FLIR camera at about 0.8 m, 1,020 subjects, linear calibration with 5-fold c
 | T_Max, single round | not measured | 0.234 to 0.259 | 0.304 to 0.333 |
 | Inner-canthus max, single round | not measured | 0.250 to 0.251 | 0.322 to 0.327 |
 
+![FDA study figure](docs/images/fda_study_figure1.png)
+
+*Figure 1 of the FDA / PhysioNet release (CC0): the facial regions in which the study extracted temperatures. Green: forehead. Red: canthi, the inner corners of the eyes. Grey: mouth. Blue: the whole face. The face is a generic illustration, not a participant.*
+
 ![FDA regions, ROC and confusion matrix](docs/images/fda_regions.png)
 
-*Left: which facial measurement tracks the oral temperature best (variable names as in the dataset, whose Table 1 defines them). Middle: ROC curves for detecting fever (oral >= 37.5 °C). Right: confusion matrix for T_Max at a fixed 37.5 °C flag. The temperature estimate is a measured pixel maximum plus a linear fit, not a neural network, so there is no Grad-CAM; the question "which face region carries the signal" is answered by comparing regions directly (left) and by the hotspot map in section 2.*
+*Left: which facial measurement tracks the oral temperature best (`T_Max` = whole face, `canthiMax` = inner corners of the eyes, `T_FH_Max` = extended forehead, `T_FHC_Max` = centre forehead, `T_OR_Max` = mouth; see the FDA figure above). Middle: ROC curves for detecting fever (oral >= 37.5 °C). Right: confusion matrix for T_Max at a fixed 37.5 °C flag. The temperature estimate is a measured pixel maximum plus a linear fit, not a neural network, so there is no Grad-CAM; the question "which face region carries the signal" is answered by comparing regions directly (left) and by the hotspot map in section 2.*
 
 ### Temperature detection on real subjects (FDA data)
 
 ![FDA examples](docs/images/fda_examples.png)
 
 *Twelve subjects drawn at random (six with oral temperature below 37.5 °C, six at or above): the facial maximum measured by the camera (round 1), the calibrated oral-equivalent estimate (5-fold cross-validated) and the oral thermometer. The camera reads about 1 °C low; calibration removes the average offset, but subjects with fever are still under-estimated.*
-
-![FDA study figure](docs/images/fda_study_figure1.png)
-
-*Figure 1 of the FDA / PhysioNet release (CC0). Region definitions are in Table 1 of the release.*
 
 * Threshold 37.2 °C gives sensitivity 0.95 and specificity 0.84 with four-round features, but it was chosen on the same data and is exploratory only.
 * Round 4 sits about 0.4 °C below rounds 1 to 3 (per-round residual means +0.15, +0.07, +0.06, -0.29 °C). The cause was not investigated.
@@ -87,12 +96,6 @@ For the 5 subjects recorded at both 1 m and 6.6 m the face maximum falls by 1.15
 ![Hotspot map](docs/images/charlotte_hotspots.png)
 
 *Position of the hottest pixel inside the landmark hull, relative to the landmark box, over frontal frames up to 1.4 m. It describes where the maximum tends to occur; it does not prove that the reading is correct.*
-
-**Landmark schemes (annotation coordinates only).**
-
-![Charlotte landmarks](docs/images/charlotte_landmarks.png)
-
-*Landmarks from the dataset's annotation files, drawn without the images. Grey: other frames normalised to their own box. Blue: the convex hull used as measurement ROI; dashed: the same ROI shifted by 10% of its height, the perturbation tested in section 3.*
 
 ### 3. ROI placement (Charlotte-ThermalFace, 600 images, 4 subjects)
 
@@ -150,6 +153,10 @@ Registration (RGB-guided mode only): about 3 px median centre error in the Speak
 ## Dashboard and API
 
 The Streamlit dashboard (`streamlit run frontend/app.py`) has three tabs: **Screen an image** (upload a 16-bit radiometric frame for a measured face maximum, status and CSV report, or an 8-bit frame for detection only), **FDA calibration explorer** (choose a facial measurement and a threshold, see MAE, RMSE, sensitivity, specificity, scatter and ROC on the 1,020 FDA subjects) and **Method and limits**. Nothing is stored. The bundled FDA table contains no subject identifiers or demographics.
+
+![Dashboard](docs/images/dashboard_fda.png)
+
+*Dashboard tab with the FDA data: pick a facial measurement, a round and a threshold; the metrics, scatter plot and ROC update.*
 
 The FastAPI endpoint (`uvicorn backend.app:app`) accepts a single-channel 16-bit image up to 10 MB at `POST /screen` and returns the status and face maximum per face. `calibrated` is false unless `CALIBRATION_JSON` points to a calibration file.
 
@@ -222,6 +229,11 @@ The tool performs no identification or face recognition. The dashboard keeps rea
 * Charlotte-ThermalFace: "A Novel Fully Annotated Thermal Infrared Face Dataset: Recorded in Various Environment Conditions and Distances From The Camera", arXiv:2205.02093.
 * LLVIP: Jia et al., "LLVIP: A Visible-infrared Paired Dataset for Low-light Vision", ICCV Workshops 2021.
 * FDA / PhysioNet: https://physionet.org/content/face-oral-temp-data/1.0.0/
+  The dataset authors ask that these papers are cited when the data is used:
+  1. Wang Q, Zhou Y, Ghassemi P, McBride D, Casamento JP, Pfefer TJ. Infrared Thermography for Measuring Elevated Body Temperature: Clinical Accuracy, Calibration, and Evaluation. Sensors 2022, 22, 215. https://doi.org/10.3390/s22010215
+  2. Zhou Y, Ghassemi P, Chen M, McBride D, Casamento JP, Pfefer TJ, Wang Q. Clinical evaluation of fever-screening thermography: impact of consensus guidelines and facial measurement location. Journal of Biomedical Optics 2020, 25(9), 097002. https://doi.org/10.1117/1.JBO.25.9.097002
+  3. Ghassemi P, Pfefer TJ, Casamento JP, Simpson R, Wang Q. Best practices for standardized performance testing of infrared thermographs intended for fever screening. PLoS ONE 2018, 13(9), e0203302. https://doi.org/10.1371/journal.pone.0203302
+  4. Dwith Chenna YN, Ghassemi P, Pfefer TJ, Casamento J, Wang Q. Free-Form Deformation Approach for Registration of Visible and Infrared Facial Images in Fever Screening. Sensors 2018, 18(1), 125. https://doi.org/10.3390/s18010125
 * SpeakingFaces: Abdrakhmanova, Kuzdeuov, Jarju, Khassanov, Lewis, Varol, "SpeakingFaces: A Large-Scale Multimodal Dataset of Voice Commands with Visual and Thermal Video Streams", Sensors 21(10):3465, 2021, doi:10.3390/s21103465. ISSAI dataset: doi:10.48333/SMGD-YJ77.
 
 ## Licence
