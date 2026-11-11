@@ -28,7 +28,7 @@ st.set_page_config(page_title="Thermal screening", page_icon="🌡️", layout="
 st.title("Thermal face-temperature screening")
 st.caption("Research prototype, not a medical device. Face surface temperature is not core body temperature. "
            "Images are processed in memory and never stored.")
-tab_scan, tab_fda, tab_method = st.tabs(["Screen an image", "FDA calibration explorer", "Method and limits"])
+tab_fda, tab_scan, tab_method = st.tabs(["Temperature accuracy (FDA, real data)", "Screen an image", "Method and limits"])
 
 
 @st.cache_resource

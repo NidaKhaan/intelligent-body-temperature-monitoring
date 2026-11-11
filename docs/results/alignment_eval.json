@@ -1,0 +1,35 @@
+{
+  "n_frames": 91,
+  "n_valid": 91,
+  "n_positions": 9,
+  "rgb_size_wh": [
+    768,
+    512
+  ],
+  "thermal_geometry_wh": [
+    464,
+    348
+  ],
+  "iou_median": {
+    "homography": 0.9229868287181865,
+    "plain_resize": 0.5184176025960673,
+    "wrong_position": 0.860007569136781
+  },
+  "share_iou_ge_0_5": {
+    "homography": 1.0,
+    "plain_resize": 0.6043956043956044,
+    "wrong_position": 1.0
+  },
+  "share_iou_ge_0_7": {
+    "homography": 1.0,
+    "plain_resize": 0.0,
+    "wrong_position": 1.0
+  },
+  "centre_error_px_median": {
+    "homography": 3.3702957378103062,
+    "plain_resize": 40.838489523518135,
+    "wrong_position": 10.358615672585154
+  },
+  "calibration_reproj_px_median": 0.31776905059814453,
+  "calibration_inliers_median": 83.0
+}

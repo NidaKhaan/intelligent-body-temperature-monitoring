@@ -24,7 +24,7 @@ A research prototype that turns a radiometric thermal frame into a face-temperat
 |---|---|
 | Person detection | Evaluated on LLVIP; optional module, not part of the thermal-only pipeline (ResNet50 needs about 6.9 s per frame on a Colab CPU) |
 | Face detection | MediaPipe on thermal frames (in the pipeline) and on RGB frames (demonstrated on SpeakingFaces) |
-| RGB-thermal alignment | `HomographyRegistration` (unit tested) and an eye-based `FaceAligner`, demonstrated on one SpeakingFaces subject; not wired into the thermal-only pipeline |
+| RGB-thermal alignment | `HomographyRegistration` and `RgbGuidedScreener` (RGB face, mapped thermal ROI, face maximum), unit tested; box-mapping accuracy evaluated on one SpeakingFaces subject (section 4b). The temperature chain through RGB guidance is not validated: no public dataset has radiometric RGB-thermal pairs with an oral reference |
 | Face to person association | Not implemented |
 | Temperature from thermal data | Implemented (16-bit counts to °C, assumed 0.01 K per count) |
 | Error of at most 0.3 °C | See key finding 2 |
@@ -55,6 +55,16 @@ One FLIR camera at about 0.8 m, 1,020 subjects, linear calibration with 5-fold c
 
 *Left: which facial measurement tracks the oral temperature best (variable names as in the dataset, whose Table 1 defines them). Middle: ROC curves for detecting fever (oral >= 37.5 °C). Right: confusion matrix for T_Max at a fixed 37.5 °C flag. The temperature estimate is a measured pixel maximum plus a linear fit, not a neural network, so there is no Grad-CAM; the question "which face region carries the signal" is answered by comparing regions directly (left) and by the hotspot map in section 2.*
 
+### Temperature detection on real subjects (FDA data)
+
+![FDA examples](docs/images/fda_examples.png)
+
+*Twelve subjects drawn at random (six with oral temperature below 37.5 °C, six at or above): the facial maximum measured by the camera (round 1), the calibrated oral-equivalent estimate (5-fold cross-validated) and the oral thermometer. The camera reads about 1 °C low; calibration removes the average offset, but subjects with fever are still under-estimated.*
+
+![FDA study figure](docs/images/fda_study_figure1.png)
+
+*Figure 1 of the FDA / PhysioNet release (CC0). Region definitions are in Table 1 of the release.*
+
 * Threshold 37.2 °C gives sensitivity 0.95 and specificity 0.84 with four-round features, but it was chosen on the same data and is exploratory only.
 * Round 4 sits about 0.4 °C below rounds 1 to 3 (per-round residual means +0.15, +0.07, +0.06, -0.29 °C). The cause was not investigated.
 * The saved calibration (slope 0.587, intercept 15.84) is valid for the FDA camera and ROI definition only. Applied to Charlotte-ThermalFace it would flag healthy volunteers.
@@ -78,6 +88,12 @@ For the 5 subjects recorded at both 1 m and 6.6 m the face maximum falls by 1.15
 
 *Position of the hottest pixel inside the landmark hull, relative to the landmark box, over frontal frames up to 1.4 m. It describes where the maximum tends to occur; it does not prove that the reading is correct.*
 
+**Landmark schemes (annotation coordinates only).**
+
+![Charlotte landmarks](docs/images/charlotte_landmarks.png)
+
+*Landmarks from the dataset's annotation files, drawn without the images. Grey: other frames normalised to their own box. Blue: the convex hull used as measurement ROI; dashed: the same ROI shifted by 10% of its height, the perturbation tested in section 3.*
+
 ### 3. ROI placement (Charlotte-ThermalFace, 600 images, 4 subjects)
 
 > **Detector note.** The table below (and the IoU in the registration figure) was measured with MediaPipe's legacy `solutions` full-range face detector. MediaPipe 1.x no longer ships it, so the code now uses the Tasks API with the short-range BlazeFace model, which is meant for nearer faces. The same 600 images measured with the current detector are in `docs/results/charlotte_roi_detector_v2.csv`.
@@ -100,6 +116,12 @@ Shifting the ROI barely changes the face maximum (above 0.1 °C in 9% of images 
 
 *A homography estimated once from one frame of a camera position is applied to another frame of the same position. The IoU in the figure title compares the mapped box with a box MediaPipe finds directly on the thermal image: a proxy, not ground truth. The homography is stable within a camera position (standard deviation 0.10 to 0.27 px) and differs between the nine positions.*
 
+### 4b. RGB-to-thermal box mapping (SpeakingFaces, one subject)
+
+![Alignment evaluation](docs/images/alignment_eval.png)
+
+*91 test frames from 9 camera positions. For each position one homography is calibrated on a single frame (mean reprojection error 0.32 px, median 83 inliers) and tested on the other frames. Proxy ground truth: the face box MediaPipe finds on the dataset's aligned RGB frame. Median IoU: homography 0.92, plain resize 0.52, homography of another position 0.86; IoU >= 0.5 in 100% / 60% / 100% of frames; median centre error 3.4 / 40.8 / 10.4 px. Plain resize is a weak baseline because the two cameras have very different fields of view (78° RGB, 24° thermal, per the dataset card). One subject, one trial, a proxy and not true ground truth.*
+
 ### 5. Person detection (LLVIP, first 500 consecutive test pairs, IoU 0.5)
 
 Torchvision Faster R-CNN with COCO weights.
@@ -112,6 +134,10 @@ Torchvision Faster R-CNN with COCO weights.
 | ResNet50 / infrared | 0.836 | 0.829 | 0.780 | 155 ms |
 
 On a Colab CPU MobileNet takes about 0.56 s and ResNet50 about 6.9 s per frame. The 500 frames come from a few scenes and there are no confidence intervals.
+
+![Person detections](docs/images/llvip_detections.png)
+
+*Two LLVIP test frames shown to document non-commercial research (Jia et al., ICCV Workshops 2021; terms: https://github.com/bupt-ai-cz/LLVIP/blob/main/Term%20of%20Use%20and%20License.md). Green: annotation, red: detection. The dataset blurs faces and prohibits identifying people.*
 
 ### 6. Error budget (estimate, not measured)
 
@@ -153,14 +179,14 @@ Pretrained COCO weights come from torchvision; check their terms before any comm
 ├── requirements.txt
 ├── configs/            calibration for the FDA camera only (not transferable)
 ├── src/
-│   ├── pipeline/       ThermalScreener: fail-safe screening logic
+│   ├── pipeline/       ThermalScreener (thermal-only), RgbGuidedScreener (RGB face to thermal ROI)
 │   ├── temperature/    radiometric conversion, FDA baseline analysis
 │   ├── detection/      face detector wrapper, person detector (LLVIP evaluation)
 │   ├── alignment/      HomographyRegistration, eye-based FaceAligner
 │   └── utils/          StageTracker: resumable stages, atomic checkpoints
 ├── backend/            FastAPI /screen endpoint
 ├── frontend/           Streamlit dashboard and bundled FDA table
-├── scripts/            make_figures.py, deploy_space.py
+├── scripts/            make_figures.py, make_figures_extra.py, alignment_eval.py, roi_detector_check.py, deploy_space.py
 ├── notebooks/          research log (Colab)
 ├── docs/
 │   ├── images/         figures used in this README
