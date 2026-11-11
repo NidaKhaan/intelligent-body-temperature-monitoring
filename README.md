@@ -96,7 +96,7 @@ For the 5 subjects recorded at both 1 m and 6.6 m the face maximum falls by 1.15
 
 ### 3. ROI placement (Charlotte-ThermalFace, 600 images, 4 subjects)
 
-> **Detector note.** The table below (and the IoU in the registration figure) was measured with MediaPipe's legacy `solutions` full-range face detector. MediaPipe 1.x no longer ships it, so the code now uses the Tasks API with the short-range BlazeFace model, which is meant for nearer faces. The same 600 images measured with the current detector are in `docs/results/charlotte_roi_detector_v2.csv`.
+> **Detector note.** The ROI table below was measured with a MediaPipe face detector. After MediaPipe 1.x dropped the legacy `solutions` API the code uses the Tasks API (BlazeFace short-range model). Re-running the same 600 images with it gave the same IoU, ROI difference and detection flag on every row (`docs/results/charlotte_roi_detector_v2.csv`), so the numbers below stand. Why the two runs agree exactly was not investigated.
 
 | Distance | ROI shifted by 10% of face height | Automatic box vs landmark ROI | IoU with landmark box |
 |---|---|---|---|
@@ -122,6 +122,8 @@ Shifting the ROI barely changes the face maximum (above 0.1 °C in 9% of images 
 
 *91 test frames from 9 camera positions. For each position one homography is calibrated on a single frame (mean reprojection error 0.32 px, median 83 inliers) and tested on the other frames. Proxy ground truth: the face box MediaPipe finds on the dataset's aligned RGB frame. Median IoU: homography 0.92, plain resize 0.52, homography of another position 0.86; IoU >= 0.5 in 100% / 60% / 100% of frames; median centre error 3.4 / 40.8 / 10.4 px. Plain resize is a weak baseline because the two cameras have very different fields of view (78° RGB, 24° thermal, per the dataset card). One subject, one trial, a proxy and not true ground truth.*
 
+*Reading the registration numbers. The control with another position's homography still reaches IoU 0.86 because the faces here are large (about 200 px wide) and the positions differ by only about 10 px; the centre error (3.4 px with the right homography, 10.4 px with another position's, 40.8 px with a plain resize) separates the cases better than IoU. For scale: in the ROI-shift experiment on Charlotte-ThermalFace a shift of 10% of the face height changed the face maximum by at most 0.05 °C on average per distance, and 10 px is about 5% of a 200 px face. This suggests that registration errors of this size matter little for the face maximum at close range, but it is an indirect estimate from two different datasets.*
+
 ### 5. Person detection (LLVIP, first 500 consecutive test pairs, IoU 0.5)
 
 Torchvision Faster R-CNN with COCO weights.
@@ -142,6 +144,8 @@ On a Colab CPU MobileNet takes about 0.56 s and ResNet50 about 6.9 s per frame. 
 ### 6. Error budget (estimate, not measured)
 
 Calibration RMSE 0.30 to 0.33 °C, automatic-ROI bias about 0.15 °C and the 1.4 m distance effect about 0.05 °C combine to roughly 0.35 °C RMSE at 1.4 m or closer, assuming independent errors. It cannot be checked end to end because no public dataset pairs images with an oral reference.
+
+Registration (RGB-guided mode only): about 3 px median centre error in the SpeakingFaces test, which the ROI-shift experiment suggests changes the face maximum by well under 0.05 °C at close range (indirect, see section 4b). It is not part of the sum above, which describes the thermal-only pipeline.
 
 ## Dashboard and API
 
