@@ -23,7 +23,9 @@ class RgbGuidedScreener:
             x1, y1 = min(int(round(x1)), w), min(int(round(y1)), h)
             if x1 - x0 < 2 or y1 - y0 < 2:
                 continue
-            r = FaceReading((x0, y0, x1, y1), float(temp_c[y0:y1, x0:x1].max()), "ok")
+            sub = temp_c[y0:y1, x0:x1]
+            iy, ix = np.unravel_index(int(np.argmax(sub)), sub.shape)
+            r = FaceReading((x0, y0, x1, y1), float(sub[iy, ix]), "ok", hotspot=(x0 + int(ix), y0 + int(iy)))
             if (y1 - y0) < self.cfg.min_face_height_px:
                 r.status = "unreliable_roi_small"
             elif self.cfg.calibration is not None:

@@ -28,6 +28,7 @@ class FaceReading:
     status: str                            # ok | no_face | unreliable_roi_small | invalid_input
     oral_equiv_c: Optional[float] = None
     alert: Optional[bool] = None
+    hotspot: Optional[tuple] = None        # (x, y) of the hottest pixel inside the box
 
 class ThermalScreener:
     def __init__(self, face_detector, config: ScreenerConfig = ScreenerConfig()):
@@ -46,7 +47,9 @@ class ThermalScreener:
             x0, y0, x1, y1 = max(int(x0), 0), max(int(y0), 0), min(int(x1), w), min(int(y1), h)
             if x1 - x0 < 2 or y1 - y0 < 2:
                 continue
-            r = FaceReading((x0, y0, x1, y1), float(temp_c[y0:y1, x0:x1].max()), 'ok')
+            sub = temp_c[y0:y1, x0:x1]
+            iy, ix = np.unravel_index(int(np.argmax(sub)), sub.shape)
+            r = FaceReading((x0, y0, x1, y1), float(sub[iy, ix]), "ok", hotspot=(x0 + int(ix), y0 + int(iy)))
             if (y1 - y0) < self.cfg.min_face_height_px:
                 r.status = 'unreliable_roi_small'
             elif self.cfg.calibration is not None:

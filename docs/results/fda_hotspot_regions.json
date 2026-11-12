@@ -1,0 +1,42 @@
+{
+  "1": {
+    "n": 1003,
+    "tolerance_c": 0.05,
+    "matches_any": {
+      "inner canthi": 0.6640079760717846,
+      "forehead": 0.16550348953140578,
+      "mouth": 0.2143569292123629
+    },
+    "none_of_the_three": 0.06979062811565304
+  },
+  "2": {
+    "n": 1009,
+    "tolerance_c": 0.05,
+    "matches_any": {
+      "inner canthi": 0.4370664023785927,
+      "forehead": 0.11892963330029732,
+      "mouth": 0.44400396432111
+    },
+    "none_of_the_three": 0.0931615460852329
+  },
+  "3": {
+    "n": 1010,
+    "tolerance_c": 0.05,
+    "matches_any": {
+      "inner canthi": 0.4633663366336634,
+      "forehead": 0.11188118811881188,
+      "mouth": 0.4376237623762376
+    },
+    "none_of_the_three": 0.0900990099009901
+  },
+  "4": {
+    "n": 991,
+    "tolerance_c": 0.05,
+    "matches_any": {
+      "inner canthi": 0.08879919273461151,
+      "forehead": 0.014127144298688193,
+      "mouth": 0.9061553985872856
+    },
+    "none_of_the_three": 0.016145307769929364
+  }
+}

@@ -4,7 +4,7 @@ import os, shutil, sys, tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-INCLUDE = ["src", "frontend", "configs"]
+INCLUDE = ["src", "frontend", "configs", ".streamlit"]
 IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", ".ipynb_checkpoints")
 
 def build(dest: Path):

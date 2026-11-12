@@ -18,14 +18,23 @@ def synthetic_frame(face_max_c=36.5, face_h_px=160, shape=(348, 464), ambient_c=
 
 
 def render_overlay(temp_c, readings, lo=20.0, hi=38.0):
+    """Colormapped thermal image with, per face: a box, the measured maximum as a label and a cross on the hottest pixel."""
     g = np.clip((temp_c - lo) / (hi - lo) * 255, 0, 255).astype(np.uint8)
     rgb = cv2.applyColorMap(g, cv2.COLORMAP_INFERNO)[:, :, ::-1].copy()
     for r in readings:
         if r.box is None:
             continue
-        color = (255, 0, 0) if r.alert else ((255, 255, 255) if r.status == "ok" else (0, 200, 255))
+        color = (255, 60, 60) if r.alert else ((255, 255, 255) if r.status == "ok" else (255, 170, 0))
         x0, y0, x1, y1 = r.box
         cv2.rectangle(rgb, (x0, y0), (x1, y1), color, 2)
+        if getattr(r, "hotspot", None) is not None:
+            cv2.drawMarker(rgb, tuple(int(v) for v in r.hotspot), (0, 255, 255), cv2.MARKER_CROSS, 14, 2)
+        if r.face_max_c is not None:
+            label = f"{r.face_max_c:.1f} C"
+            scale = max(0.5, min(1.2, (x1 - x0) / 220))
+            (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, scale, 2)
+            ty = y0 - 6 if y0 - th - 8 > 0 else y1 + th + 8
+            cv2.putText(rgb, label, (x0, ty), cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2, cv2.LINE_AA)
     return rgb
 
 

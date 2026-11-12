@@ -1,6 +1,10 @@
 # Thermal Face-Temperature Screening
 
+<p align="center"><img src="docs/images/logo_wide.png" width="420" alt="Thermal Screening logo"></p>
+
 ![python](https://img.shields.io/badge/python-3.13-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![status](https://img.shields.io/badge/status-research%20prototype-orange)
+
+**Live demo:** https://thermal-face-screening.streamlit.app/ (runs on Streamlit Community Cloud; may take a few seconds to wake up)
 
 A research prototype that turns a radiometric thermal frame into a face-temperature reading and measures, honestly, how far that reading can be trusted. It combines a fail-safe pipeline with analyses on four public datasets. Every number below comes from a result file in `docs/results/` or from the cited dataset.
 
@@ -16,6 +20,32 @@ A thermal camera records a temperature for every pixel. This project takes such 
 2. **Check:** it is compared with an oral thermometer for 1,020 real volunteers (FDA data).
 3. **Result:** the raw reading is about 1 °C too low. A linear calibration brings the average error to about 0.2 to 0.3 °C under good conditions, but fevers are under-estimated, distance lowers the reading by more than 1 °C, and a calibration does not transfer to another camera.
 4. **Safety:** when in doubt (no face, face too small, no calibration) the software reports a status instead of raising an alert.
+
+## The problem and how it works, in plain language
+
+**The problem.** During outbreaks, airports, stations and hospitals try to spot people with a raised temperature. Taking every temperature by hand is slow, and nobody can watch a crowd all day. A thermal camera shows the surface temperature of everything in view, but it does not know which pixels are a face, and a skin reading is not the temperature a doctor would measure in the mouth.
+
+**What this project does.**
+
+1. **Find the face** in the thermal image automatically.
+2. **Read the hottest point** inside the face region (skin surface temperature).
+3. **Check the reading against reality.** Real volunteers have both a camera reading and an oral-thermometer reading (FDA dataset), so we can measure how far the camera is off and whether a simple correction (calibration) helps.
+4. **Say "not sure" when it should.** No face, a face too small or too far, or no calibration for this camera: the software reports a status instead of a fever alert.
+
+**What the evidence says.**
+
+| Claim | Evidence | Strength |
+|---|---|---|
+| The camera reads about 1 °C below an oral thermometer | 1,020 volunteers, FDA dataset (our analysis) | Strong for that camera at about 0.8 m |
+| A simple calibration brings the typical error to about 0.2 to 0.3 °C | Same data, cross-validated | Same limits; one camera model |
+| People with a fever are under-estimated; about 1 in 4 are missed at a 37.5 °C flag | 111 volunteers with oral temperature of 37.5 °C or more | Small group, wide uncertainty |
+| The reading falls with distance: more than 1 °C from 1 m to 6.6 m | Charlotte-ThermalFace, 5 people measured at both distances | Small sample |
+| Even an accurate thermometer cannot find everyone | Gostic et al., eLife 2020: under best-case assumptions, traveller symptom and risk screening would miss more than half of infected people, mostly because they show no symptoms yet | Independent modelling study |
+| The reference data are trustworthy | Released by the FDA study team together with four peer-reviewed papers (see Citations) | Peer reviewed |
+
+Real screening thermographs are specified in the standard IEC 80601-2-59. This prototype has not been tested against it and must not be used for medical decisions.
+
+**Further reading** (titles from the reference list of Gostic et al.; their findings are not summarised here): Comparison of Infrared Thermal Detection Systems for mass fever screening in a tropical healthcare setting, *Public Health*, 2015. Thermal Image Scanning for Influenza Border Screening: Results of an Airport Screening Study, *PLOS ONE*, 2011. International travels and fever screening during epidemics: a literature review on the effectiveness and potential use of non-contact infrared thermometers, *Eurosurveillance*, 2009.
 
 ## Key findings
 
@@ -73,6 +103,10 @@ One FLIR camera at about 0.8 m, 1,020 subjects, linear calibration with 5-fold c
 ![FDA examples](docs/images/fda_examples.png)
 
 *Twelve subjects drawn at random (six with oral temperature below 37.5 °C, six at or above): the facial maximum measured by the camera (round 1), the calibrated oral-equivalent estimate (5-fold cross-validated) and the oral thermometer. The camera reads about 1 °C low; calibration removes the average offset, but subjects with fever are still under-estimated.*
+
+![FDA hotspot regions](docs/images/fda_hotspot_regions.png)
+
+*Where the hottest point of the face lies, in 1003 FDA volunteers (round 1): the inner-canthus region (the inner corners of the eyes) contains it in 66%, the forehead region in 17% and the mouth region in 21% of volunteers; 7% have it elsewhere. Regions overlap, so the shares can add up to more than 100%. The four bar groups are the four measurement rounds. This answers "where does the reading come from" with measurements; the temperature is a pixel maximum, not a neural-network output, so Grad-CAM does not apply.*
 
 * Threshold 37.2 °C gives sensitivity 0.95 and specificity 0.84 with four-round features, but it was chosen on the same data and is exploratory only.
 * Round 4 sits about 0.4 °C below rounds 1 to 3 (per-round residual means +0.15, +0.07, +0.06, -0.29 °C). The cause was not investigated.
@@ -168,7 +202,7 @@ The FastAPI endpoint (`uvicorn backend.app:app`) accepts a single-channel 16-bit
 * Close-range screening (about 1 to 1.4 m) is the validated regime. Distant crowd monitoring needs higher-resolution optics.
 * Charlotte-ThermalFace: one annotation session (S3) is missing from the zip and S2 has corrupted distance values; affected rows were excluded.
 * SpeakingFaces thermal frames provided here are 8-bit colourised images, so the dataset supports detection and registration only.
-* Deployment to a hosted demo is paused; the repository contains the scripts for a Hugging Face Space.
+* The live demo runs on Streamlit Community Cloud's free tier (it sleeps when idle). It shows a temperature on a face only for an uploaded 16-bit radiometric frame, because the radiometric datasets used here may not be redistributed; the dashboard's *Real subjects* tab shows the same idea with FDA data. The Hugging Face Space scripts (`scripts/deploy_space.py`) are optional.
 
 ## Datasets and licences
 
@@ -235,6 +269,8 @@ The tool performs no identification or face recognition. The dashboard keeps rea
   3. Ghassemi P, Pfefer TJ, Casamento JP, Simpson R, Wang Q. Best practices for standardized performance testing of infrared thermographs intended for fever screening. PLoS ONE 2018, 13(9), e0203302. https://doi.org/10.1371/journal.pone.0203302
   4. Dwith Chenna YN, Ghassemi P, Pfefer TJ, Casamento J, Wang Q. Free-Form Deformation Approach for Registration of Visible and Infrared Facial Images in Fever Screening. Sensors 2018, 18(1), 125. https://doi.org/10.3390/s18010125
 * SpeakingFaces: Abdrakhmanova, Kuzdeuov, Jarju, Khassanov, Lewis, Varol, "SpeakingFaces: A Large-Scale Multimodal Dataset of Voice Commands with Visual and Thermal Video Streams", Sensors 21(10):3465, 2021, doi:10.3390/s21103465. ISSAI dataset: doi:10.48333/SMGD-YJ77.
+
+* Gostic KM, Gomez ACR, Mummah RO, Kucharski AJ, Lloyd-Smith JO. Estimated effectiveness of symptom and risk screening to prevent the spread of COVID-19. eLife 2020;9:e55570. https://doi.org/10.7554/eLife.55570
 
 ## Licence
 
