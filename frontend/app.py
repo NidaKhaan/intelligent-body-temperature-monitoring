@@ -13,6 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse, Rectangle
+import matplotlib.patheffects as pe
 from PIL import Image
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import roc_auc_score, roc_curve
@@ -256,10 +257,10 @@ with tab_sim:
                 ax[1].add_patch(Rectangle((bx0, by0), bx1 - bx0, by1 - by0, fill=False, ec=colour, lw=2.5))
                 for (name, (rx0, ry0, rx1, ry1)), rc in zip(region_boxes(box).items(), ["#22c55e", "#38bdf8", "#9ca3af"]):
                     ax[1].add_patch(Rectangle((rx0, ry0), rx1 - rx0, ry1 - ry0, fill=False, ec=rc, lw=1.2, ls="--"))
-                    ax[1].text(rx1 + 4, (ry0 + ry1) / 2, name, color=rc, fontsize=8, va="center")
+                    ax[1].text(rx1 + 4, (ry0 + ry1) / 2, name, color=rc, fontsize=9, va="center", path_effects=[pe.withStroke(linewidth=2.5, foreground="black")])
                 if r.hotspot is not None:
                     ax[1].scatter([r.hotspot[0]], [r.hotspot[1]], marker="+", s=160, c="cyan", linewidths=2)
-                ax[1].text(bx0, max(by0 - 8, 14), f"{r.face_max_c:.1f} C (simulated)", color=colour, fontsize=13, fontweight="bold")
+                ax[1].text(bx0, max(by0 - 8, 14), f"{r.face_max_c:.1f} C (simulated)", color=colour, fontsize=13, fontweight="bold", path_effects=[pe.withStroke(linewidth=2.5, foreground="black")])
             ax[1].text(0.01, 0.02, "SIMULATED, not a measurement", transform=ax[1].transAxes, color="yellow", fontsize=9, va="bottom")
             ax[1].set_title("2. Pseudo-thermal view: face box, regions, hottest point", fontsize=10)
             for a in ax:

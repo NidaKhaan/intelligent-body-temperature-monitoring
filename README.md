@@ -109,7 +109,7 @@ One FLIR camera at about 0.8 m, 1,020 subjects, linear calibration with 5-fold c
 *Where the hottest point of the face lies, in 1003 FDA volunteers (round 1): the inner-canthus region (the inner corners of the eyes) contains it in 66%, the forehead region in 17% and the mouth region in 21% of volunteers; 7% have it elsewhere. Regions overlap, so the shares can add up to more than 100%. The four bar groups are the four measurement rounds. This answers "where does the reading come from" with measurements; the temperature is a pixel maximum, not a neural-network output, so Grad-CAM does not apply.*
 
 * Threshold 37.2 °C gives sensitivity 0.95 and specificity 0.84 with four-round features, but it was chosen on the same data and is exploratory only.
-* Round 4 sits about 0.4 °C below rounds 1 to 3 (per-round residual means +0.15, +0.07, +0.06, -0.29 °C). The cause was not investigated.
+* Round 4 sits about 0.4 °C below rounds 1 to 3 (per-round residual means +0.15, +0.07, +0.06, -0.29 °C). A possible explanation: in round 4 the hottest point lies in the mouth region for 91% of volunteers, against 21% in round 1 (see the hotspot figure). The dataset documentation was not checked to confirm what round 4 involves.
 * The saved calibration (slope 0.587, intercept 15.84) is valid for the FDA camera and ROI definition only. Applied to Charlotte-ThermalFace it would flag healthy volunteers.
 
 ### 2. Distance effect and where the maximum comes from (Charlotte-ThermalFace)

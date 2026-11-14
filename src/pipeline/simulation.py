@@ -21,7 +21,9 @@ def region_boxes(box):
 
 
 def simulate_thermal(rgb, box, face_max_c, ambient_c=24.0, skin_offset_c=2.0):
-    """Returns (temp_c float32 HxW, (x, y) of the simulated hot spot). The maximum inside the box equals face_max_c."""
+    """Returns (temp_c float32 HxW, (x, y) of the simulated hot spot). The maximum inside the box equals face_max_c.
+    Face detail comes from the photo's local contrast (dark features such as brows and hair read cooler); hair, neck and
+    shoulders are set to fixed fractions of the skin temperature. All of it is illustrative."""
     if rgb.ndim != 3 or rgb.shape[2] != 3 or rgb.dtype != np.uint8:
         raise ValueError("expected an HxWx3 uint8 RGB photo")
     h, w = rgb.shape[:2]
@@ -30,14 +32,27 @@ def simulate_thermal(rgb, box, face_max_c, ambient_c=24.0, skin_offset_c=2.0):
     if x1 - x0 < 4 or y1 - y0 < 4:
         raise ValueError("face box too small")
     bw, bh = x1 - x0, y1 - y0
+    cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
     gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
-    mask = np.zeros((h, w), np.float32)
-    cv2.ellipse(mask, (int((x0 + x1) / 2), int((y0 + y1) / 2)), (max(int(bw / 2 * 0.95), 1), max(int(bh / 2 * 0.95), 1)),
-                0, 0, 360, 1.0, -1)
-    mask = cv2.GaussianBlur(mask, (0, 0), max(1.0, bw * 0.03))
-    gray_s = cv2.GaussianBlur(gray, (0, 0), 6.0)
+    sigma = max(1.0, bw * 0.03)
+
+    def blob_ellipse(centre, axes, sig):
+        m = np.zeros((h, w), np.float32)
+        cv2.ellipse(m, (int(centre[0]), int(centre[1])), (max(int(axes[0]), 1), max(int(axes[1]), 1)), 0, 0, 360, 1.0, -1)
+        return cv2.GaussianBlur(m, (0, 0), sig)
+
+    face = blob_ellipse((cx, cy), (bw / 2 * 0.95, bh / 2 * 0.95), sigma)
+    head = blob_ellipse((cx, cy - 0.10 * bh), (bw / 2 * 1.30, bh / 2 * 1.25), sigma * 2)
+    body = np.zeros((h, w), np.float32)
+    body[min(int(y1 - 0.15 * bh), h):h, max(int(cx - 0.55 * bw), 0):min(int(cx + 0.55 * bw), w)] = 1.0       # neck
+    body[min(int(y1 + 0.35 * bh), h):h, max(int(cx - 1.6 * bw), 0):min(int(cx + 1.6 * bw), w)] = 1.0         # shoulders
+    body = cv2.GaussianBlur(body, (0, 0), sigma * 2)
+    gray_s = cv2.GaussianBlur(gray, (0, 0), 3.0)
+    lo, hi = np.percentile(gray[y0:y1, x0:x1], [2, 98])
+    gn = np.clip((gray - lo) / (hi - lo + 1e-6), 0.0, 1.0)
+    factor = np.maximum.reduce([body * 0.40, head * (0.55 + 0.10 * gray_s), face * (0.80 + 0.20 * gn)])
     skin = float(face_max_c) - skin_offset_c
-    t = ambient_c + (skin - ambient_c) * (0.12 * gray_s * (1.0 - mask) + mask * (0.85 + 0.15 * gray))
+    t = ambient_c + (skin - ambient_c) * factor
     spots = [(int(x0 + 0.35 * bw), int(y0 + 0.36 * bh)), (int(x0 + 0.65 * bw), int(y0 + 0.36 * bh))]
     yy, xx = np.mgrid[0:h, 0:w]
     for sx, sy in spots:
