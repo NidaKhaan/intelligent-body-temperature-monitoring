@@ -149,6 +149,10 @@ Shifting the ROI barely changes the face maximum (above 0.1 °C in 9% of images 
 
 *MediaPipe finds the face box and six keypoints (eyes, nose, mouth, ears). The eye keypoints drive a similarity transform that gives a canonical 256x256 crop, and the same transform is applied to the thermal frame. In this dataset the aligned RGB and thermal frames share one geometry. The thermal frames are 8-bit colourised PNGs, so they carry no temperature.*
 
+![Thermal keypoints](docs/images/thermal_keypoints.png)
+
+*The same face detector run directly on real thermal frames (8-bit): box in red, six keypoints (eyes, nose, mouth, ears) as dots. This is the step that finds the face before a temperature is read.*
+
 ![RGB-thermal registration](docs/images/alignment_demo.png)
 
 *A homography estimated once from one frame of a camera position is applied to another frame of the same position. The IoU in the figure title compares the mapped box with a box MediaPipe finds directly on the thermal image: a proxy, not ground truth. The homography is stable within a camera position (standard deviation 0.10 to 0.27 px) and differs between the nine positions.*
@@ -186,11 +190,15 @@ Registration (RGB-guided mode only): about 3 px median centre error in the Speak
 
 ## Dashboard and API
 
-The Streamlit dashboard (`streamlit run frontend/app.py`) has three tabs: **Screen an image** (upload a 16-bit radiometric frame for a measured face maximum, status and CSV report, or an 8-bit frame for detection only), **FDA calibration explorer** (choose a facial measurement and a threshold, see MAE, RMSE, sensitivity, specificity, scatter and ROC on the 1,020 FDA subjects) and **Method and limits**. Nothing is stored. The bundled FDA table contains no subject identifiers or demographics.
+The Streamlit dashboard (`streamlit run frontend/app.py`) has five tabs: **Start here** (plain-language explanation and evidence), **Real subjects (FDA)** (a volunteer's regional temperatures, camera reading, calibrated estimate and oral thermometer, where the hotspot lies, and a threshold explorer), **Photo demo (simulation)** (any ordinary photo is turned into a pseudo-thermal picture to show what the pipeline outputs; the temperature is a value you choose and is not a measurement), **Screen an image** (upload a real 16-bit radiometric frame for a measured face maximum, status and CSV report, or an 8-bit frame for detection only) and **Method and limits**. Nothing is stored. The bundled FDA table contains no subject identifiers or demographics.
 
 ![Dashboard](docs/images/dashboard_fda.png)
 
 *Dashboard tab with the FDA data: pick a facial measurement, a round and a threshold; the metrics, scatter plot and ROC update.*
+
+![Photo demo](docs/images/dashboard_photo_demo.png)
+
+*Photo demo (simulation): an ordinary photo of a SpeakingFaces volunteer (CC BY 4.0) is turned into a pseudo-thermal picture. Face box, approximate regions, hottest point, label and alert come from the same RGB-guided pipeline code, but the temperature is a value chosen with a slider, not a measurement.*
 
 The FastAPI endpoint (`uvicorn backend.app:app`) accepts a single-channel 16-bit image up to 10 MB at `POST /screen` and returns the status and face maximum per face. `calibrated` is false unless `CALIBRATION_JSON` points to a calibration file.
 

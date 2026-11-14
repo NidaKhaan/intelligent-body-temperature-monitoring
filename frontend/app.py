@@ -22,6 +22,9 @@ from frontend.helpers import render_overlay, reading_row
 from src.pipeline.screener import Calibration, ScreenerConfig, ThermalScreener
 from src.temperature.radiometric import raw_to_celsius
 from src.temperature.regions import hotspot_region_shares
+from src.alignment.registration import HomographyRegistration
+from src.pipeline.rgb_guided import RgbGuidedScreener
+from src.pipeline.simulation import region_boxes, simulate_thermal
 
 HERE = pathlib.Path(__file__).resolve().parent
 MAX_BYTES = 10 * 1024 * 1024
@@ -39,7 +42,7 @@ except Exception:
 st.title("Thermal face-temperature screening")
 st.caption("Research prototype, not a medical device. Face surface temperature is not core body temperature. "
            "Images are processed in memory and never stored.")
-tab_home, tab_real, tab_scan, tab_method = st.tabs(["Start here", "Real subjects (FDA)", "Screen an image", "Method and limits"])
+tab_home, tab_real, tab_sim, tab_scan, tab_method = st.tabs(["Start here", "Real subjects (FDA)", "Photo demo (simulation)", "Screen an image", "Method and limits"])
 
 
 @st.cache_resource
@@ -135,7 +138,7 @@ with tab_home:
         "under best-case assumptions, traveller symptom and risk screening would miss more than half of infected people, mostly because "
         "they have no symptoms yet. Fever screening is one tool, not a guarantee.\n"
         "- The reference data come from the FDA study team and four peer-reviewed papers (cited in the project README).")
-    st.info("Next: **Real subjects (FDA)** walks through real volunteers. **Screen an image** runs the full pipeline on a thermal image you upload.")
+    st.info("Next: **Real subjects (FDA)** walks through real volunteers. **Photo demo (simulation)** shows what the pipeline outputs on any ordinary photo (the temperature there is simulated). **Screen an image** runs the real pipeline on a thermal image you upload.")
 
 with tab_real:
     st.subheader("A real volunteer, step by step")
@@ -201,6 +204,79 @@ with tab_real:
     ax.set_title(f"ROC for fever detection (AUC {roc_auc_score(fev, x):.2f})", fontsize=10); p2.pyplot(fig); plt.close(fig)
     st.caption("Calibration is a 5-fold cross-validated linear fit. Thresholds chosen here are tuned on the same data, so treat the operating "
                "point as exploratory.")
+
+with tab_sim:
+    st.warning("SIMULATION. An ordinary photo contains no temperature information. Here the photo is turned into a pseudo-thermal picture and the "
+               "temperature shown is the value you choose below, not a measurement. The demo shows what the pipeline produces: face box, face regions, "
+               "hottest point, temperature label and alert.")
+    sc1, sc2 = st.columns([2, 1])
+    SAMPLES = sorted((HERE / "samples").glob("photo_*.png"))
+    with sc1:
+        source = st.radio("Photo", ["Bundled sample", "Upload my own photo"], horizontal=True, key="sim_src")
+        photo = None
+        if source == "Bundled sample" and SAMPLES:
+            pick = st.selectbox("Sample", [p.name for p in SAMPLES], key="sim_sample")
+            photo = cv2.cvtColor(cv2.imread(str(HERE / "samples" / pick)), cv2.COLOR_BGR2RGB)
+        elif source == "Upload my own photo":
+            upl = st.file_uploader("A photo with one clearly visible face (processed in memory, not stored)",
+                                   type=["png", "jpg", "jpeg"], key="sim_up")
+            if upl is not None:
+                im = decode(upl)
+                if im is not None and im.ndim == 3 and im.dtype == np.uint8:
+                    photo = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+                elif im is not None:
+                    st.error("Please upload an ordinary colour photo (8-bit).")
+    with sc2:
+        shown_c = st.slider("Temperature to display (simulated, °C)", 34.0, 40.0, 36.4, 0.1, key="sim_c")
+        sim_thr = st.slider("Alert threshold (°C)", 37.0, 38.5, 37.5, 0.1, key="sim_thr")
+    if photo is not None:
+        scale = min(1.0, 960 / max(photo.shape[:2]))
+        if scale < 1.0:
+            photo = cv2.resize(photo, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        try:
+            boxes = get_detector()(photo)
+        except Exception as exc:
+            boxes = None
+            st.error(f"Face detector unavailable: {exc!r}")
+        if boxes is not None and not boxes:
+            st.warning("No face found. Try a photo with a larger, front-facing face.")
+        elif boxes:
+            box = boxes[0]
+            temp_c, _ = simulate_thermal(photo, box, shown_c)
+            cfg = ScreenerConfig(calibration=Calibration(1.0, 0.0), alert_threshold_c=float(sim_thr))
+            r = RgbGuidedScreener(lambda im: [box], HomographyRegistration(np.eye(3)), cfg).process_celsius(photo, temp_c)[0]
+            fig, ax = plt.subplots(1, 2, figsize=(12, 5.2))
+            ax[0].imshow(photo)
+            ax[0].add_patch(Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1], fill=False, ec="lime", lw=2))
+            ax[0].set_title("1. Ordinary photo: face found", fontsize=10)
+            ax[1].imshow(temp_c, cmap="inferno", vmin=20, vmax=38)
+            colour = "#ff4444" if r.alert else "white"
+            if r.box is not None:
+                bx0, by0, bx1, by1 = r.box
+                ax[1].add_patch(Rectangle((bx0, by0), bx1 - bx0, by1 - by0, fill=False, ec=colour, lw=2.5))
+                for (name, (rx0, ry0, rx1, ry1)), rc in zip(region_boxes(box).items(), ["#22c55e", "#38bdf8", "#9ca3af"]):
+                    ax[1].add_patch(Rectangle((rx0, ry0), rx1 - rx0, ry1 - ry0, fill=False, ec=rc, lw=1.2, ls="--"))
+                    ax[1].text(rx1 + 4, (ry0 + ry1) / 2, name, color=rc, fontsize=8, va="center")
+                if r.hotspot is not None:
+                    ax[1].scatter([r.hotspot[0]], [r.hotspot[1]], marker="+", s=160, c="cyan", linewidths=2)
+                ax[1].text(bx0, max(by0 - 8, 14), f"{r.face_max_c:.1f} C (simulated)", color=colour, fontsize=13, fontweight="bold")
+            ax[1].text(0.01, 0.02, "SIMULATED, not a measurement", transform=ax[1].transAxes, color="yellow", fontsize=9, va="bottom")
+            ax[1].set_title("2. Pseudo-thermal view: face box, regions, hottest point", fontsize=10)
+            for a in ax:
+                a.axis("off")
+            plt.tight_layout(); st.pyplot(fig); plt.close(fig)
+            k1, k2, k3 = st.columns(3)
+            k1.metric("Face max (simulated)", f"{r.face_max_c:.1f} °C")
+            k2.metric("Status", r.status.replace("_", " "))
+            k3.metric("Alert", "yes" if r.alert else "no")
+            if r.alert:
+                st.error("Alert: the (simulated) face maximum is at or above the threshold.")
+            elif r.status == "unreliable_roi_small":
+                st.warning("Face too small for a reliable reading; the pipeline would report a status instead of an alert.")
+            st.caption("Regions are approximate boxes derived from the face box, not separate detections. The hot spot is placed at the inner eye "
+                       "corners as a simplifying assumption. Sample photos: SpeakingFaces (ISSAI), CC BY 4.0.")
+    else:
+        st.info("Choose the bundled sample or upload a photo.")
 
 with tab_scan:
     st.markdown("Upload a thermal image to run the full pipeline: **face box, measured temperature label, and a cross on the hottest pixel.** "
