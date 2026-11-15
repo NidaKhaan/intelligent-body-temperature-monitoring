@@ -109,7 +109,7 @@ One FLIR camera at about 0.8 m, 1,020 subjects, linear calibration with 5-fold c
 *Where the hottest point of the face lies, in 1003 FDA volunteers (round 1): the inner-canthus region (the inner corners of the eyes) contains it in 66%, the forehead region in 17% and the mouth region in 21% of volunteers; 7% have it elsewhere. Regions overlap, so the shares can add up to more than 100%. The four bar groups are the four measurement rounds. This answers "where does the reading come from" with measurements; the temperature is a pixel maximum, not a neural-network output, so Grad-CAM does not apply.*
 
 * Threshold 37.2 °C gives sensitivity 0.95 and specificity 0.84 with four-round features, but it was chosen on the same data and is exploratory only.
-* Round 4 sits about 0.4 °C below rounds 1 to 3 (per-round residual means +0.15, +0.07, +0.06, -0.29 °C). A possible explanation: in round 4 the hottest point lies in the mouth region for 91% of volunteers, against 21% in round 1 (see the hotspot figure). The dataset documentation was not checked to confirm what round 4 involves.
+* Round 4 sits about 0.4 °C below rounds 1 to 3 (per-round residual means +0.15, +0.07, +0.06, -0.29 °C). A possible explanation: in round 4 the hottest point lies in the mouth region for 91% of volunteers, against 21% in round 1 (see the hotspot figure). The dataset README does not describe what the measurement rounds are, so this remains a hypothesis.
 * The saved calibration (slope 0.587, intercept 15.84) is valid for the FDA camera and ROI definition only. Applied to Charlotte-ThermalFace it would flag healthy volunteers.
 
 ### 2. Distance effect and where the maximum comes from (Charlotte-ThermalFace)
@@ -190,7 +190,7 @@ Registration (RGB-guided mode only): about 3 px median centre error in the Speak
 
 ## Dashboard and API
 
-The Streamlit dashboard (`streamlit run frontend/app.py`) has five tabs: **Start here** (plain-language explanation and evidence), **Real subjects (FDA)** (a volunteer's regional temperatures, camera reading, calibrated estimate and oral thermometer, where the hotspot lies, and a threshold explorer), **Photo demo (simulation)** (a real RGB and thermal pair from SpeakingFaces: the face found on the RGB frame is mapped onto the thermal frame by a calibrated homography and the box, regions, hottest point, label and alert are drawn; or your own photo as a stylised pseudo-thermal picture. The thermal frames are 8-bit, so the temperature scale is simulated and is not a measurement), **Screen an image** (upload a real 16-bit radiometric frame for a measured face maximum, status and CSV report, or an 8-bit frame for detection only) and **Method and limits**. Nothing is stored. The bundled FDA table contains no subject identifiers or demographics.
+The Streamlit dashboard (`streamlit run frontend/app.py`) has five tabs: **Start here** (plain-language explanation and evidence), **Real subjects (FDA)** (a volunteer's regional temperatures, camera reading, calibrated estimate and oral thermometer, where the hotspot lies, and a threshold explorer), **Photo demo (simulation)** (a real RGB and thermal pair from SpeakingFaces: the face found on the RGB frame is mapped onto the thermal frame by a calibrated homography and the box, regions, hottest point, label and alert are drawn; or your own photo as a stylised pseudo-thermal picture; the thermal frames are 8-bit, so the temperature scale is simulated and is not a measurement), **Screen an image** (upload a real 16-bit radiometric frame for a measured face maximum, status and CSV report, or an 8-bit frame for detection only) and **Method and limits**. Nothing is stored. The bundled FDA table contains no subject identifiers or demographics.
 
 ![Dashboard](docs/images/dashboard_fda.png)
 
@@ -200,7 +200,7 @@ The Streamlit dashboard (`streamlit run frontend/app.py`) has five tabs: **Start
 
 *Photo demo (simulation): a real RGB and thermal pair of a SpeakingFaces volunteer (CC BY 4.0). The face is found on the RGB frame and mapped onto the thermal frame with a homography calibrated for that camera position; regions are approximate boxes derived from it. The thermal frame is 8-bit, so the temperature scale is assigned: the label is a value chosen with a slider, not a measurement.*
 
-The FastAPI endpoint (`uvicorn backend.app:app`) accepts a single-channel 16-bit image up to 10 MB at `POST /screen` and returns the status and face maximum per face. `calibrated` is false unless `CALIBRATION_JSON` points to a calibration file.
+The FastAPI endpoint (`uvicorn backend.app:app`) accepts a single-channel 16-bit image up to 10 MB at `POST /screen` and returns the status, the face maximum and the hottest pixel's position per face. `calibrated` is false unless `CALIBRATION_JSON` points to a calibration file.
 
 ## Limitations
 
