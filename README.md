@@ -190,7 +190,7 @@ Registration (RGB-guided mode only): about 3 px median centre error in the Speak
 
 ## Dashboard and API
 
-The Streamlit dashboard (`streamlit run frontend/app.py`) has five tabs: **Start here** (plain-language explanation and evidence), **Real subjects (FDA)** (a volunteer's regional temperatures, camera reading, calibrated estimate and oral thermometer, where the hotspot lies, and a threshold explorer), **Photo demo (simulation)** (any ordinary photo is turned into a pseudo-thermal picture to show what the pipeline outputs; the temperature is a value you choose and is not a measurement), **Screen an image** (upload a real 16-bit radiometric frame for a measured face maximum, status and CSV report, or an 8-bit frame for detection only) and **Method and limits**. Nothing is stored. The bundled FDA table contains no subject identifiers or demographics.
+The Streamlit dashboard (`streamlit run frontend/app.py`) has five tabs: **Start here** (plain-language explanation and evidence), **Real subjects (FDA)** (a volunteer's regional temperatures, camera reading, calibrated estimate and oral thermometer, where the hotspot lies, and a threshold explorer), **Photo demo (simulation)** (a real RGB and thermal pair from SpeakingFaces: the face found on the RGB frame is mapped onto the thermal frame by a calibrated homography and the box, regions, hottest point, label and alert are drawn; or your own photo as a stylised pseudo-thermal picture. The thermal frames are 8-bit, so the temperature scale is simulated and is not a measurement), **Screen an image** (upload a real 16-bit radiometric frame for a measured face maximum, status and CSV report, or an 8-bit frame for detection only) and **Method and limits**. Nothing is stored. The bundled FDA table contains no subject identifiers or demographics.
 
 ![Dashboard](docs/images/dashboard_fda.png)
 
@@ -198,7 +198,7 @@ The Streamlit dashboard (`streamlit run frontend/app.py`) has five tabs: **Start
 
 ![Photo demo](docs/images/dashboard_photo_demo.png)
 
-*Photo demo (simulation): an ordinary photo of a SpeakingFaces volunteer (CC BY 4.0) is turned into a pseudo-thermal picture. Face box, approximate regions, hottest point, label and alert come from the same RGB-guided pipeline code, but the temperature is a value chosen with a slider, not a measurement.*
+*Photo demo (simulation): a real RGB and thermal pair of a SpeakingFaces volunteer (CC BY 4.0). The face is found on the RGB frame and mapped onto the thermal frame with a homography calibrated for that camera position; regions are approximate boxes derived from it. The thermal frame is 8-bit, so the temperature scale is assigned: the label is a value chosen with a slider, not a measurement.*
 
 The FastAPI endpoint (`uvicorn backend.app:app`) accepts a single-channel 16-bit image up to 10 MB at `POST /screen` and returns the status and face maximum per face. `calibrated` is false unless `CALIBRATION_JSON` points to a calibration file.
 
